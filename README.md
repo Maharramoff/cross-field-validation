@@ -112,7 +112,3 @@ is then handled by the validation framework.
 
 Contributions are welcome! Please fork the repository and submit a pull request with your changes. Ensure your code
 follows the existing code style and includes appropriate unit tests.
-
-### License
-
-This project is licensed under the MIT License.
