@@ -1,4 +1,4 @@
-package az.maharramoff;
+package az.maharramoff.model;
 
 import lombok.Getter;
 

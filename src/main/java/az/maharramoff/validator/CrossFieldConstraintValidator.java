@@ -1,4 +1,6 @@
-package az.maharramoff;
+package az.maharramoff.validator;
+
+import az.maharramoff.model.ConstraintViolation;
 
 import java.lang.reflect.Field;
 import java.util.List;

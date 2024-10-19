@@ -1,5 +1,6 @@
-package az.maharramoff;
+package az.maharramoff.validator;
 
+import az.maharramoff.model.ConstraintViolation;
 import org.springframework.beans.BeanUtils;
 
 import java.lang.annotation.Annotation;

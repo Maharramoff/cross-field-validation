@@ -1,4 +1,6 @@
-package az.maharramoff;
+package az.maharramoff.annotation;
+
+import az.maharramoff.validator.CrossFieldConstraintsEnabler;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
