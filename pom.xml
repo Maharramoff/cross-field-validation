@@ -7,6 +7,43 @@
     <groupId>az.maharramoff</groupId>
     <artifactId>cross-field-validation</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Cross Field Validation</name>
+    <description>A Java library that extends Jakarta Bean Validation capabilities to enable cross-field validation, so
+        developers can define constraints that span multiple fields within an object.
+    </description>
+    <url>https://github.com/Maharramoff/cross-field-validation</url>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>author</id>
+            <name>Shamkhal Maharramov</name>
+            <email>sh.maharramov@gmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <url>https://github.com/Maharramoff/cross-field-validation</url>
+        <connection>scm:git:https://github.com/Maharramoff/cross-field-validation.git</connection>
+        <developerConnection>scm:git:git@github.com:maharramoff/cross-field-validation.git</developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
