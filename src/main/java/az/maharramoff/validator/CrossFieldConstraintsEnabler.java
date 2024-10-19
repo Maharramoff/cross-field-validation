@@ -2,6 +2,7 @@ package az.maharramoff.validator;
 
 import az.maharramoff.annotation.EnableCrossFieldConstraints;
 import az.maharramoff.model.ConstraintViolation;
+import lombok.Getter;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -23,6 +24,7 @@ import java.util.*;
 public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableCrossFieldConstraints, Object>
 {
 
+    @Getter
     private final List<CrossFieldConstraintValidator> fieldValidators = new ArrayList<>();
     private final Map<Class<?>, List<Field>> fieldMapping = new HashMap<>();
 
@@ -44,6 +46,8 @@ public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableC
             try
             {
                 isValid &= fieldValidator.isValid(obj, fieldMapping, violations);
+
+
             }
             catch (Exception e)
             {
@@ -65,6 +69,7 @@ public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableC
 
         return isValid;
     }
+
 }
 
 
