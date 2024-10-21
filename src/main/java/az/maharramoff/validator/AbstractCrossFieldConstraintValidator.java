@@ -12,7 +12,7 @@ import java.util.function.BiConsumer;
 
 /**
  * An abstract base class for implementing cross-field validation logic.
- * <h3>Example Usage:</h3>
+ * <h2>Example Usage:</h2>
  * <pre>
  * {@code
  * public class ExampleValidator extends AbstractCrossFieldConstraintValidator {
@@ -31,9 +31,18 @@ import java.util.function.BiConsumer;
  * @author Shamkhal Maharramov
  * @see CrossFieldConstraintValidator
  * @see ConstraintViolation
+ * @since 1.0.0
  */
 public abstract class AbstractCrossFieldConstraintValidator implements CrossFieldConstraintValidator
 {
+    /**
+     * Default constructor for the `AbstractCrossFieldConstraintValidator`.
+     */
+    public AbstractCrossFieldConstraintValidator()
+    {
+        // This constructor is intentionally left blank.
+    }
+
     /**
      * Retrieves the value of a given property field from an object.
      *

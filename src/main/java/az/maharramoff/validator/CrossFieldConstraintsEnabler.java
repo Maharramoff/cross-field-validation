@@ -11,7 +11,7 @@ import java.util.*;
 
 /**
  * A {@code ConstraintValidator} implementation that enables cross-field validation for objects.
- * <h3>Key Components:</h3>
+ * <h2>Key Components:</h2>
  * <ul>
  *   <li>{@code fieldValidators}: A list of all cross-field validators to be run on the object.</li>
  *   <li>{@code fieldMapping}: A mapping from each class to its list of fields.</li>
@@ -20,6 +20,7 @@ import java.util.*;
  * @author Shamkhal Maharramov
  * @see CrossFieldConstraintValidator
  * @see ConstraintViolation
+ * @since 1.0.0
  */
 public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableCrossFieldConstraints, Object>
 {
@@ -28,10 +29,21 @@ public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableC
     private final List<CrossFieldConstraintValidator> fieldValidators = new ArrayList<>();
     private final Map<Class<?>, List<Field>> fieldMapping = new HashMap<>();
 
+    /**
+     * Default constructor for the `CrossFieldConstraintsEnabler`.
+     */
     public CrossFieldConstraintsEnabler()
     {
+        // This constructor is intentionally left blank.
     }
 
+    /**
+     * Validates the given object using the registered cross-field validators.
+     *
+     * @param obj     The object to validate.
+     * @param context The constraint validator context.
+     * @return {@code true} if the object is valid, {@code false} otherwise.
+     */
     @Override
     public boolean isValid(final Object obj, final ConstraintValidatorContext context)
     {
@@ -55,7 +67,6 @@ public class CrossFieldConstraintsEnabler implements ConstraintValidator<EnableC
             }
         }
 
-        // Handle constraint violations
         if (!isValid)
         {
             context.disableDefaultConstraintViolation();

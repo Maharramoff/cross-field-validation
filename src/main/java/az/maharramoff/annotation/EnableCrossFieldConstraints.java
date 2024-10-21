@@ -3,14 +3,15 @@ package az.maharramoff.annotation;
 import az.maharramoff.validator.CrossFieldConstraintsEnabler;
 
 import javax.validation.Constraint;
-import javax.validation.Payload;
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Enables cross-field constraints validation on the annotated class type.
- * <p>
  *
- * <h3>Usage Example:</h3>
+ * <h2>Usage Example:</h2>
  * <pre>
  * &#64;EnableCrossFieldConstraints
  * public class UserProfileDTO {
@@ -24,17 +25,12 @@ import java.lang.annotation.*;
  *
  * @author Shamkhal Maharramov
  * @see CrossFieldConstraintsEnabler
+ * @since 1.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = CrossFieldConstraintsEnabler.class)
-@Documented
 public @interface EnableCrossFieldConstraints
 {
-    String message() default "";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
 }
 
