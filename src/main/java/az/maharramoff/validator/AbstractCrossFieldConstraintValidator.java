@@ -14,18 +14,17 @@ import java.util.function.BiConsumer;
  * An abstract base class for implementing cross-field validation logic.
  * <h2>Example Usage:</h2>
  * <pre>
- * {@code
+ * <code>
  * public class ExampleValidator extends AbstractCrossFieldConstraintValidator {
- *
- *     @Override
- *     public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<ConstraintViolation> violations) {
- *         processFields(obj, fieldMapping, Example.class, (field, annotation) -> {
+ *     {@literal @}Override
+ *     public boolean isValid(Object obj, Map&lt;Class&lt;?&gt;, List&lt;Field&gt;&gt; fieldMapping, List&lt;ConstraintViolation&gt; violations) {
+ *         processFields(obj, fieldMapping, Example.class, (field, annotation) -&gt; {
  *             // ... your validation logic ...
  *         });
  *         return violations.isEmpty();
  *     }
  * }
- * }
+ * </code>
  * </pre>
  *
  * @author Shamkhal Maharramov
