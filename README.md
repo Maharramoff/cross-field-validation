@@ -32,7 +32,7 @@ object context when writing field-level validators. There are long-standing open
 ```xml
 
 <dependency>
-    <groupId>az.maharramoff</groupId>
+    <groupId>io.github.maharramoff</groupId>
     <artifactId>cross-field-validation</artifactId>
     <version>1.0.0</version>
 </dependency>
