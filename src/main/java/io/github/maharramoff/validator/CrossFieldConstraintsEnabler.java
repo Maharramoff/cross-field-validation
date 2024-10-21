@@ -1,7 +1,7 @@
-package az.maharramoff.validator;
+package io.github.maharramoff.validator;
 
-import az.maharramoff.annotation.EnableCrossFieldConstraints;
-import az.maharramoff.model.ConstraintViolation;
+import io.github.maharramoff.annotation.EnableCrossFieldConstraints;
+import io.github.maharramoff.model.ConstraintViolation;
 import lombok.Getter;
 
 import javax.validation.ConstraintValidator;

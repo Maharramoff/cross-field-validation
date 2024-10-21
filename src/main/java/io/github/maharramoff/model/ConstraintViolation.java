@@ -1,4 +1,4 @@
-package az.maharramoff.model;
+package io.github.maharramoff.model;
 
 import lombok.Getter;
 

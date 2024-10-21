@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>az.maharramoff</groupId>
+    <groupId>io.github.maharramoff</groupId>
     <artifactId>cross-field-validation</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Cross Field Validation</name>
+    <name>${project.groupId}:${project.artifactId}</name>
     <description>A Java library that extends Jakarta Bean Validation capabilities to enable cross-field validation, so
         developers can define constraints that span multiple fields within an object.
     </description>

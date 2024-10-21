@@ -1,6 +1,6 @@
-package az.maharramoff.validator;
+package io.github.maharramoff.validator;
 
-import az.maharramoff.model.ConstraintViolation;
+import io.github.maharramoff.model.ConstraintViolation;
 
 import java.lang.reflect.Field;
 import java.util.List;

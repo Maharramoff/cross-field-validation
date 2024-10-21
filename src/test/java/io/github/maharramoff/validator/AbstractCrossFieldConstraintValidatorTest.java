@@ -1,6 +1,6 @@
-package az.maharramoff.validator;
+package io.github.maharramoff.validator;
 
-import az.maharramoff.model.ConstraintViolation;
+import io.github.maharramoff.model.ConstraintViolation;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
