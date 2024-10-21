@@ -157,6 +157,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.6.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <checksums>required</checksums>
+                    <deploymentName>${project.artifactId}-${project.version}</deploymentName>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
