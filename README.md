@@ -65,7 +65,7 @@ public @interface MatchWith
     String message() default "Fields do not match.";
 }
 
-public class MatchWithValidator extends AbstractCrossFieldConstraintValidator
+public class MatchWithValidator extends BaseCrossFieldValidator
 {
     @Override
     public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<CrossFieldConstraintViolation> violations)
