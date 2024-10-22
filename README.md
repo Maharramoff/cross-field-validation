@@ -38,7 +38,7 @@ object context when writing field-level validators. There are long-standing open
 </dependency>
 ```
 
-**1. Annotate your class with `@EnableCrossFieldConstraints`**
+**2. Annotate your class with `@EnableCrossFieldConstraints`**
 
 ```java
 @EnableCrossFieldConstraints
