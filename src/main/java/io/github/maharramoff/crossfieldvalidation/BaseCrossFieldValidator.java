@@ -1,7 +1,8 @@
 package io.github.maharramoff.crossfieldvalidation;
 
-import org.springframework.beans.BeanUtils;
-
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -50,20 +51,22 @@ public abstract class BaseCrossFieldValidator implements CrossFieldConstraintVal
      */
     protected Object getProperty(Object object, String fieldName)
     {
-        java.beans.PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(object.getClass(), fieldName);
-        if (pd == null)
-        {
-            return null;
-        }
-
         try
         {
-            return pd.getReadMethod().invoke(object);
+            PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(object.getClass()).getPropertyDescriptors();
+            for (PropertyDescriptor propertyDescriptor : propertyDescriptors)
+            {
+                if (propertyDescriptor.getName().equals(fieldName))
+                {
+                    return propertyDescriptor.getReadMethod().invoke(object);
+                }
+            }
         }
-        catch (Exception e)
+        catch (IntrospectionException | ReflectiveOperationException e)
         {
             return null;
         }
+        return null;
     }
 
     /**

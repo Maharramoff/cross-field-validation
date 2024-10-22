@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 (2024-10-22)
+
+### Changes
+
+* Replace BeanUtils with Java Introspector for accessing properties in BaseCrossFieldValidator.
+
 ## 1.1.0 (2024-10-22)
 
 ### Bug Fixes
