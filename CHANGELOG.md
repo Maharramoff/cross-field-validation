@@ -10,7 +10,7 @@
 
 ### Bug Fixes
 
-* Resolve issue with manual validator registration ([#issue-number])
+* Resolve issue with manual validator registration (#1)
 
 ### Changes
 
