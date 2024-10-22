@@ -1,6 +1,7 @@
 package io.github.maharramoff.crossfieldvalidation;
 
 import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -23,13 +24,18 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @author Shamkhal Maharramov
- * @see CrossFieldConstraintsEnabler
+ * @see CrossFieldValidationProcessor
  * @since 1.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = CrossFieldConstraintsEnabler.class)
+@Constraint(validatedBy = CrossFieldValidationProcessor.class)
 public @interface EnableCrossFieldConstraints
 {
+    String message() default "";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
 }
 

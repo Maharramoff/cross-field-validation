@@ -22,7 +22,7 @@ class BaseCrossFieldValidatorTest
         validator = new BaseCrossFieldValidator()
         {
             @Override
-            public boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<ConstraintViolation> violations)
+            public boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<CrossFieldConstraintViolation> violations)
             {
                 return false;
             }
@@ -30,7 +30,7 @@ class BaseCrossFieldValidatorTest
     }
 
     @Test
-    void testGetProperty_ReturnsCorrectValue()
+    void shouldReturnCorrectValue()
     {
         TestObject testObject = new TestObject("testValue");
         Object     value      = validator.getProperty(testObject, "property");
@@ -38,7 +38,7 @@ class BaseCrossFieldValidatorTest
     }
 
     @Test
-    void testGetProperty_ReturnsNullForInvalidProperty()
+    void shouldReturnNullForInvalidProperty()
     {
         TestObject testObject = new TestObject("testValue");
         Object     value      = validator.getProperty(testObject, "nonExistentProperty");

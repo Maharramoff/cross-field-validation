@@ -4,13 +4,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ConstraintViolationTest
+class CrossFieldConstraintViolationTest
 {
 
     @Test
     void shouldCreateConstraintViolation()
     {
-        ConstraintViolation violation = new ConstraintViolation("fieldName", "Error message");
+        CrossFieldConstraintViolation violation = new CrossFieldConstraintViolation("fieldName", "Error message");
         assertEquals("fieldName", violation.getFieldName());
         assertEquals("Error message", violation.getMessage());
     }

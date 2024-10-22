@@ -9,7 +9,7 @@ import lombok.Getter;
  * @since 1.0.0
  */
 @Getter
-public class ConstraintViolation
+public class CrossFieldConstraintViolation
 {
 
     private final String fieldName;
@@ -21,7 +21,7 @@ public class ConstraintViolation
      * @param fieldName The name of the field where the violation occurred.
      * @param message   The violation message.
      */
-    public ConstraintViolation(String fieldName, String message)
+    public CrossFieldConstraintViolation(String fieldName, String message)
     {
         this.fieldName = fieldName;
         this.message = message;

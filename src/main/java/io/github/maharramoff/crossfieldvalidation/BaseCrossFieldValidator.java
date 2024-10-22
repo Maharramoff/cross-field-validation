@@ -28,7 +28,7 @@ import java.util.function.BiConsumer;
  *
  * @author Shamkhal Maharramov
  * @see CrossFieldConstraintValidator
- * @see ConstraintViolation
+ * @see CrossFieldConstraintViolation
  * @since 1.0.0
  */
 public abstract class BaseCrossFieldValidator implements CrossFieldConstraintValidator

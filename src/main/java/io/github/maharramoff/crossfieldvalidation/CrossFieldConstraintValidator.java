@@ -11,7 +11,8 @@ import java.util.Map;
  * </p>
  *
  * @author Shamkhal Maharramov
- * @see ConstraintViolation
+ * @see CrossFieldConstraintViolation
+ * @since 1.0.0
  */
 public interface CrossFieldConstraintValidator
 {
@@ -24,6 +25,6 @@ public interface CrossFieldConstraintValidator
      * @return True if the object is valid according to custom cross-field constraints; false otherwise.
      * @throws Exception If an error occurs during validation.
      */
-    boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<ConstraintViolation> violations) throws Exception;
+    boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<CrossFieldConstraintViolation> violations) throws Exception;
 }
 

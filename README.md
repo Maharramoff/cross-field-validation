@@ -34,7 +34,7 @@ object context when writing field-level validators. There are long-standing open
 <dependency>
     <groupId>io.github.maharramoff</groupId>
     <artifactId>cross-field-validation</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -57,7 +57,7 @@ public class SignupRequestDTO
 ```java
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = MatchWithValidator.class)
+@CrossFieldConstraint(validatedBy = MatchWithValidator.class)
 public @interface MatchWith
 {
     String field();
@@ -68,7 +68,7 @@ public @interface MatchWith
 public class MatchWithValidator extends AbstractCrossFieldConstraintValidator
 {
     @Override
-    public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<ConstraintViolation> violations)
+    public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<CrossFieldConstraintViolation> violations)
     {
         processFields(obj, fieldMapping, MatchWith.class, (field, annotation) ->
         {
@@ -80,7 +80,7 @@ public class MatchWithValidator extends AbstractCrossFieldConstraintValidator
             }
             if (fieldValue == null || !fieldValue.equals(otherFieldValue))
             {
-                violations.add(new ConstraintViolation(field.getName(), annotation.message()));
+                violations.add(new CrossFieldConstraintViolation(field.getName(), annotation.message()));
             }
         });
         return violations.isEmpty();
@@ -94,9 +94,9 @@ This library utilizes a ConstraintValidator to manage cross-field validation. Cu
 CrossFieldConstraintValidator interface, providing the logic for your specific constraints.
 
 **1. Annotation Processing:** When the validation framework encounters the `@EnableCrossFieldConstraints` annotation on
-a class, it triggers the `CrossFieldConstraintsEnabler`.
+a class, it triggers the `CrossFieldValidationProcessor`.
 
-**2. Validator Execution:** The `CrossFieldConstraintsEnabler` iterates through
+**2. Validator Execution:** The `CrossFieldValidationProcessor` iterates through
 registered `CrossFieldConstraintValidator` implementations.
 
 **3. Field Analysis:** Each validator analyzes the fields of the object, looking for its corresponding annotation (
@@ -105,7 +105,8 @@ e.g., `@MatchWith`).
 **4. Validation Logic:** If the annotation is present, the validator executes its custom validation logic, comparing
 field values as needed.
 
-**5. Violation Reporting:** If a constraint is violated, the validator adds a `ConstraintViolation` to the list, which
+**5. Violation Reporting:** If a constraint is violated, the validator adds a `CrossFieldConstraintViolation` to the
+list, which
 is then handled by the validation framework.
 
 ### Contributing
