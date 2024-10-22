@@ -1,8 +1,8 @@
 package io.github.maharramoff.annotation;
 
 import io.github.maharramoff.validator.CrossFieldConstraintsEnabler;
+import jakarta.validation.Constraint;
 
-import javax.validation.Constraint;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

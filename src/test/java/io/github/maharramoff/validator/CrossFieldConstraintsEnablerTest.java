@@ -1,11 +1,10 @@
 package io.github.maharramoff.validator;
 
 import io.github.maharramoff.annotation.EnableCrossFieldConstraints;
+import jakarta.validation.ConstraintValidatorContext;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import javax.validation.ConstraintValidatorContext;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -2,10 +2,10 @@ package io.github.maharramoff.validator;
 
 import io.github.maharramoff.annotation.EnableCrossFieldConstraints;
 import io.github.maharramoff.model.ConstraintViolation;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import lombok.Getter;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import java.lang.reflect.Field;
 import java.util.*;
 
