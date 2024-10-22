@@ -11,15 +11,15 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class AbstractCrossFieldConstraintValidatorTest
+class BaseCrossFieldValidatorTest
 {
 
-    private AbstractCrossFieldConstraintValidator validator;
+    private BaseCrossFieldValidator validator;
 
     @BeforeEach
     void setUp()
     {
-        validator = new AbstractCrossFieldConstraintValidator()
+        validator = new BaseCrossFieldValidator()
         {
             @Override
             public boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<ConstraintViolation> violations)

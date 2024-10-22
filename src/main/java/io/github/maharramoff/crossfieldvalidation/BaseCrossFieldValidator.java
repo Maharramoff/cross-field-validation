@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
  * <h2>Example Usage:</h2>
  * <pre>
  * <code>
- * public class ExampleValidator extends AbstractCrossFieldConstraintValidator {
+ * public class ExampleValidator extends BaseCrossFieldValidator {
  *     {@literal @}Override
  *     public boolean isValid(Object obj, Map&lt;Class&lt;?&gt;, List&lt;Field&gt;&gt; fieldMapping, List&lt;ConstraintViolation&gt; violations) {
  *         processFields(obj, fieldMapping, Example.class, (field, annotation) -&gt; {
@@ -31,12 +31,12 @@ import java.util.function.BiConsumer;
  * @see ConstraintViolation
  * @since 1.0.0
  */
-public abstract class AbstractCrossFieldConstraintValidator implements CrossFieldConstraintValidator
+public abstract class BaseCrossFieldValidator implements CrossFieldConstraintValidator
 {
     /**
      * Default constructor for the `AbstractCrossFieldConstraintValidator`.
      */
-    public AbstractCrossFieldConstraintValidator()
+    public BaseCrossFieldValidator()
     {
         // This constructor is intentionally left blank.
     }
