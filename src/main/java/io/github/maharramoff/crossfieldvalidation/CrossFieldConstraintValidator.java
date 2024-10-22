@@ -1,6 +1,4 @@
-package io.github.maharramoff.validator;
-
-import io.github.maharramoff.model.ConstraintViolation;
+package io.github.maharramoff.crossfieldvalidation;
 
 import java.lang.reflect.Field;
 import java.util.List;

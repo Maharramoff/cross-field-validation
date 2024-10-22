@@ -1,6 +1,5 @@
-package io.github.maharramoff.validator;
+package io.github.maharramoff.crossfieldvalidation;
 
-import io.github.maharramoff.model.ConstraintViolation;
 import org.springframework.beans.BeanUtils;
 
 import java.lang.annotation.Annotation;

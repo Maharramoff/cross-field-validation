@@ -1,6 +1,5 @@
-package io.github.maharramoff.validator;
+package io.github.maharramoff.crossfieldvalidation;
 
-import io.github.maharramoff.annotation.EnableCrossFieldConstraints;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;

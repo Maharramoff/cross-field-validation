@@ -1,4 +1,4 @@
-package io.github.maharramoff.model;
+package io.github.maharramoff.crossfieldvalidation;
 
 import org.junit.jupiter.api.Test;
 

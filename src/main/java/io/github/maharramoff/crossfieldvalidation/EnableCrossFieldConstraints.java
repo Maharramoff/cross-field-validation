@@ -1,6 +1,5 @@
-package io.github.maharramoff.annotation;
+package io.github.maharramoff.crossfieldvalidation;
 
-import io.github.maharramoff.validator.CrossFieldConstraintsEnabler;
 import jakarta.validation.Constraint;
 
 import java.lang.annotation.ElementType;

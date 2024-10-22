@@ -1,6 +1,5 @@
-package io.github.maharramoff.validator;
+package io.github.maharramoff.crossfieldvalidation;
 
-import io.github.maharramoff.model.ConstraintViolation;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

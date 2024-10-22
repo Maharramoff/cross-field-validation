@@ -1,7 +1,5 @@
-package io.github.maharramoff.validator;
+package io.github.maharramoff.crossfieldvalidation;
 
-import io.github.maharramoff.annotation.EnableCrossFieldConstraints;
-import io.github.maharramoff.model.ConstraintViolation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.Getter;
