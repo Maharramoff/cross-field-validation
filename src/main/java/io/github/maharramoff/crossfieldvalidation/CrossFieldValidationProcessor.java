@@ -67,14 +67,31 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
     @Override
     public boolean isValid(final Object obj, final ConstraintValidatorContext context)
     {
-        boolean                             isValid    = true;
         List<CrossFieldConstraintViolation> violations = new ArrayList<>();
+        boolean                             isValid    = processFields(obj, violations);
 
+        if (!isValid)
+        {
+            addViolationsToContext(context, violations);
+        }
+
+        return isValid;
+    }
+
+    /**
+     * Processes all fields of the given object to perform cross-field validation.
+     *
+     * @param obj        The object to validate
+     * @param violations A list to store any constraint violations encountered during validation
+     * @return {@code true} if all validations pass, {@code false} otherwise
+     */
+    private boolean processFields(Object obj, List<CrossFieldConstraintViolation> violations)
+    {
         Class<?> clazz = obj.getClass();
         fieldMapping.computeIfAbsent(clazz, k -> Arrays.asList(k.getDeclaredFields()));
 
-        // Process each field
-        List<Field> fields = fieldMapping.get(clazz);
+        boolean     isValid = true;
+        List<Field> fields  = fieldMapping.get(clazz);
         for (Field field : fields)
         {
             for (Annotation annotation : field.getAnnotations())
@@ -83,8 +100,6 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
                 try
                 {
                     isValid &= validator.isValid(obj, fieldMapping, violations);
-
-
                 }
                 catch (Exception e)
                 {
@@ -92,19 +107,24 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
                 }
             }
         }
-
-        if (!isValid)
-        {
-            context.disableDefaultConstraintViolation();
-            for (CrossFieldConstraintViolation violation : violations)
-            {
-                context.buildConstraintViolationWithTemplate(violation.getMessage())
-                        .addPropertyNode(violation.getFieldName())
-                        .addConstraintViolation();
-            }
-        }
-
         return isValid;
+    }
+
+    /**
+     * Adds constraint violations to the provided ConstraintValidatorContext.
+     * This method disables the default constraint violation and adds custom violations
+     * based on the provided list of CrossFieldConstraintViolation objects.
+     *
+     * @param context    The ConstraintValidatorContext to which violations will be added
+     * @param violations A list of CrossFieldConstraintViolation objects representing the violations to be added
+     */
+    private void addViolationsToContext(ConstraintValidatorContext context, List<CrossFieldConstraintViolation> violations)
+    {
+        context.disableDefaultConstraintViolation();
+        for (CrossFieldConstraintViolation violation : violations)
+        {
+            context.buildConstraintViolationWithTemplate(violation.getMessage()).addPropertyNode(violation.getFieldName()).addConstraintViolation();
+        }
     }
 
     /**
