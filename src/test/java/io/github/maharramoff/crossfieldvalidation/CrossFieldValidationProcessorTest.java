@@ -9,10 +9,14 @@ import java.lang.annotation.*;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused", "unchecked"})
 class CrossFieldValidationProcessorTest
 {
 
@@ -25,9 +29,14 @@ class CrossFieldValidationProcessorTest
         validationProcessor = new CrossFieldValidationProcessor();
         mockContext = mock(ConstraintValidatorContext.class);
 
-        ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+        ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder = mock(
+                ConstraintValidatorContext.ConstraintViolationBuilder.class);
+        ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext nodeBuilder = mock(
+                ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
+
         when(mockContext.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
-        when(violationBuilder.addPropertyNode(anyString())).thenReturn(mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class));
+        when(violationBuilder.addPropertyNode(anyString())).thenReturn(nodeBuilder);
+        when(nodeBuilder.addConstraintViolation()).thenReturn(mockContext);
     }
 
     @Test
@@ -51,13 +60,10 @@ class CrossFieldValidationProcessorTest
     {
         TestObject testObject = new TestObject("password123", "password123");
 
-        // First validation should instantiate and cache the validators
         validationProcessor.isValid(testObject, mockContext);
 
-        // Manually clear the field mapping cache to simulate a new class
         validationProcessor.isValid(testObject, mockContext);
 
-        // Verify that the validator is reused from the cache on subsequent calls
         CrossFieldConstraintValidator cachedValidator = validationProcessor.getValidatorForAnnotation(MatchWith.class);
         assertNotNull(cachedValidator);
     }
@@ -69,7 +75,6 @@ class CrossFieldValidationProcessorTest
 
         boolean result = validationProcessor.isValid(testObject, mockContext);
 
-        // As there are no annotated fields, the result should still be true
         assertTrue(result);
     }
 
@@ -78,30 +83,25 @@ class CrossFieldValidationProcessorTest
     {
         TestObject testObject = new TestObject("password123", "password123");
 
-        // Mock the validator to throw an exception
         CrossFieldConstraintValidator mockValidator = mock(CrossFieldConstraintValidator.class);
         when(mockValidator.isValid(any(), any(), any())).thenThrow(new RuntimeException("Validation Error"));
 
-        // Use reflection to insert mock validator into the cache
         Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = getInternalCache();
         validatorCache.put(MatchWith.class, mockValidator);
 
         boolean result = validationProcessor.isValid(testObject, mockContext);
 
-        assertFalse(result);  // Ensure result is false since the validator failed
+        assertFalse(result);
     }
 
     @Test
     void shouldAddViolationsToConstraintValidatorContext()
     {
-        TestObject testObject = new TestObject("password123", "password456");  // These don't match, should cause a violation
+        TestObject testObject = new TestObject("password123", "password456");
 
         boolean result = validationProcessor.isValid(testObject, mockContext);
 
-        // The result should be false because of mismatching fields
         assertFalse(result);
-
-        // Verify that the violation is added to the context
         verify(mockContext).disableDefaultConstraintViolation();
         verify(mockContext).buildConstraintViolationWithTemplate("Fields do not match.");
     }
@@ -113,10 +113,7 @@ class CrossFieldValidationProcessorTest
 
         boolean result = validationProcessor.isValid(testObject, mockContext);
 
-        // As there are no violations, the result should be true
         assertTrue(result);
-
-        // Verify no violations were added
         verify(mockContext, never()).buildConstraintViolationWithTemplate(anyString());
     }
 
@@ -128,19 +125,104 @@ class CrossFieldValidationProcessorTest
 
         boolean result = validationProcessor.isValid(emptyTestObject, mockContext);
 
-        // Since there are no fields, it should return true
         assertTrue(result);
-
-        // Ensure that no violations were added to the context
         verify(mockContext, never()).buildConstraintViolationWithTemplate(anyString());
     }
 
-    // Helper class without any fields
+    @Test
+    void shouldHandleNullValuesInFields()
+    {
+        TestObject testObject = new TestObject(null, "password123");
+        boolean    result     = validationProcessor.isValid(testObject, mockContext);
+        assertFalse(result);
+        verify(mockContext).buildConstraintViolationWithTemplate(anyString());
+    }
+
+    @Test
+    void shouldHandleEmptyStringsInFields()
+    {
+        TestObject testObject = new TestObject("", "");
+        boolean    result     = validationProcessor.isValid(testObject, mockContext);
+        assertTrue(result);
+    }
+
+
+    @Test
+    void shouldReturnNullWhenAnnotationIsNotCrossFieldConstraint()
+    {
+        CrossFieldConstraintValidator validator = validationProcessor.getValidatorForAnnotation(NonCrossFieldConstraint.class);
+        assertNull(validator);
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenValidatorInstantiationFails()
+    {
+        Exception exception = assertThrows(IllegalStateException.class, () ->
+                validationProcessor.getValidatorForAnnotation(InvalidValidatorAnnotation.class));
+
+        assertTrue(exception.getMessage().contains("Failed to instantiate validator for"));
+    }
+
+    @Retention(RetentionPolicy.RUNTIME) @interface NonCrossFieldConstraint
+    {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @CrossFieldConstraint(validatedBy = NonInstantiableValidator.class) @interface InvalidValidatorAnnotation
+    {
+    }
+
+    static class NonInstantiableValidator implements CrossFieldConstraintValidator
+    {
+        public NonInstantiableValidator(String arg)
+        {
+        }
+
+        @Override
+        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fields, List<CrossFieldConstraintViolation> violations)
+        {
+            return false;
+        }
+    }
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @CrossFieldConstraint(validatedBy = MinLengthValidator.class) @interface MinLength
+    {
+        int value();
+
+        String message() default "Field must be at least {value} characters long";
+    }
+
+    static class MinLengthValidator extends BaseCrossFieldValidator
+    {
+        @Override
+        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping,
+                               List<CrossFieldConstraintViolation> violations)
+        {
+            AtomicBoolean isValid = new AtomicBoolean(true);
+
+            processFields(obj, fieldMapping, MinLength.class, (field, annotation) ->
+            {
+                String value = (String) getProperty(obj, field.getName());
+                if (value == null || value.length() < annotation.value())
+                {
+                    violations.add(new CrossFieldConstraintViolation(
+                            field.getName(),
+                            annotation.message().replace("{value}", String.valueOf(annotation.value()))));
+                    isValid.set(false);
+                }
+            });
+
+            return isValid.get();
+        }
+    }
+
     static class EmptyTestObject
     {
     }
 
-    // Reflection helper to access internal cache
     private Map<Class<? extends Annotation>, CrossFieldConstraintValidator> getInternalCache() throws Exception
     {
         Field cacheField = CrossFieldValidationProcessor.class.getDeclaredField("validatorCache");
@@ -148,8 +230,6 @@ class CrossFieldValidationProcessorTest
         return (Map<Class<? extends Annotation>, CrossFieldConstraintValidator>) cacheField.get(validationProcessor);
     }
 
-
-    // Helper class for testing fields without annotations
     static class TestObjectWithoutAnnotations
     {
         private final String value;
@@ -162,8 +242,6 @@ class CrossFieldValidationProcessorTest
         }
     }
 
-
-    // Test classes
     @Target(ElementType.FIELD)
     @Retention(RetentionPolicy.RUNTIME)
     @CrossFieldConstraint(validatedBy = MatchWithValidator.class) @interface MatchWith
@@ -176,7 +254,8 @@ class CrossFieldValidationProcessorTest
     static class MatchWithValidator extends BaseCrossFieldValidator
     {
         @Override
-        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<CrossFieldConstraintViolation> violations)
+        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping,
+                               List<CrossFieldConstraintViolation> violations)
         {
             processFields(obj, fieldMapping, MatchWith.class, (field, annotation) ->
             {
