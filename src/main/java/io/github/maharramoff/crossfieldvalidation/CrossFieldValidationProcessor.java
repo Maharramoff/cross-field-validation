@@ -9,6 +9,41 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.*;
 
+/**
+ * A {@code ConstraintValidator} implementation that enables cross-field validation for objects.
+ * This implementation automatically discovers and caches validators for fields annotated with
+ * cross-field constraint annotations.
+ *
+ * <h2>Key Components:</h2>
+ * <ul>
+ *   <li>{@code fieldMapping}: A mapping from each class to its list of fields for efficient field access.</li>
+ *   <li>{@code validatorCache}: A cache of validator instances for each constraint annotation type.</li>
+ * </ul>
+ *
+ * <h2>Usage Example:</h2>
+ * <pre>
+ * &#64;EnableCrossFieldConstraints
+ * public class UserProfileDTO {
+ *     private String password;
+ *
+ *     &#64;MatchWith(field = "password")
+ *     private String confirmPassword;
+ * }
+ * </pre>
+ *
+ * <h2>Creating Custom Constraints:</h2>
+ * <ol>
+ *   <li>Create a validator class that extends {@link CrossFieldConstraintValidator}</li>
+ *   <li>Create a constraint annotation marked with {@link CrossFieldConstraint}</li>
+ *   <li>Apply the constraint annotation to fields requiring validation</li>
+ * </ol>
+ *
+ * @author Shamkhal Maharramov
+ * @see CrossFieldConstraintValidator
+ * @see CrossFieldConstraint
+ * @see CrossFieldConstraintViolation
+ * @since 1.0.0
+ */
 public class CrossFieldValidationProcessor implements ConstraintValidator<EnableCrossFieldConstraints, Object>
 {
     private static final Logger logger = LoggerFactory.getLogger(CrossFieldValidationProcessor.class);
