@@ -2,48 +2,16 @@ package io.github.maharramoff.crossfieldvalidation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.*;
 
-/**
- * A {@code ConstraintValidator} implementation that enables cross-field validation for objects.
- * This implementation automatically discovers and caches validators for fields annotated with
- * cross-field constraint annotations.
- *
- * <h2>Key Components:</h2>
- * <ul>
- *   <li>{@code fieldMapping}: A mapping from each class to its list of fields for efficient field access.</li>
- *   <li>{@code validatorCache}: A cache of validator instances for each constraint annotation type.</li>
- * </ul>
- *
- * <h2>Usage Example:</h2>
- * <pre>
- * &#64;EnableCrossFieldConstraints
- * public class UserProfileDTO {
- *     private String password;
- *
- *     &#64;MatchWith(field = "password")
- *     private String confirmPassword;
- * }
- * </pre>
- *
- * <h2>Creating Custom Constraints:</h2>
- * <ol>
- *   <li>Create a validator class that extends {@link CrossFieldConstraintValidator}</li>
- *   <li>Create a constraint annotation marked with {@link CrossFieldConstraint}</li>
- *   <li>Apply the constraint annotation to fields requiring validation</li>
- * </ol>
- *
- * @author Shamkhal Maharramov
- * @see CrossFieldConstraintValidator
- * @see CrossFieldConstraint
- * @see CrossFieldConstraintViolation
- * @since 1.0.0
- */
 public class CrossFieldValidationProcessor implements ConstraintValidator<EnableCrossFieldConstraints, Object>
 {
+    private static final Logger logger = LoggerFactory.getLogger(CrossFieldValidationProcessor.class);
     private final Map<Class<?>, List<Field>> fieldMapping = new HashMap<>();
     private final Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = new HashMap<>();
 
@@ -67,6 +35,8 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
     @Override
     public boolean isValid(final Object obj, final ConstraintValidatorContext context)
     {
+        logger.debug("Starting validation for object: {}", obj.getClass().getName());
+
         List<CrossFieldConstraintViolation> violations = new ArrayList<>();
         boolean                             isValid    = processFields(obj, violations);
 
@@ -92,18 +62,31 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
 
         boolean     isValid = true;
         List<Field> fields  = fieldMapping.get(clazz);
+
+        logger.debug("Processing {} fields for class: {}", fields.size(), clazz.getName());
+
         for (Field field : fields)
         {
             for (Annotation annotation : field.getAnnotations())
             {
+                logger.debug("Processing annotation: {}", annotation.annotationType().getName());
+
                 CrossFieldConstraintValidator validator = getValidatorForAnnotation(annotation.annotationType());
-                try
+
+                logger.debug("Validator obtained: {}", (validator != null ? validator.getClass().getName() : "null"));
+
+                if (validator != null)
                 {
-                    isValid &= validator.isValid(obj, fieldMapping, violations);
-                }
-                catch (Exception e)
-                {
-                    isValid = false;
+                    try
+                    {
+                        isValid &= validator.isValid(obj, fieldMapping, violations);
+                        logger.debug("Validation result: {}", isValid);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.debug("Validation error: {}", e.getMessage());
+                        isValid = false;
+                    }
                 }
             }
         }
@@ -137,6 +120,8 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
      */
     CrossFieldConstraintValidator getValidatorForAnnotation(Class<? extends Annotation> annotationType)
     {
+        logger.debug("Getting validator for annotation type: {}", annotationType.getName());
+
         return validatorCache.computeIfAbsent(annotationType, this::registerValidator);
     }
 
@@ -150,18 +135,35 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
      */
     private CrossFieldConstraintValidator registerValidator(Class<? extends Annotation> annotationType)
     {
+        logger.debug("Attempting to register validator for: {}", annotationType.getName());
+
         CrossFieldConstraint crossFieldConstraint = annotationType.getAnnotation(CrossFieldConstraint.class);
+
+        logger.debug("CrossFieldConstraint annotation present: {}", (crossFieldConstraint != null));
+
         if (crossFieldConstraint == null)
         {
+            logger.debug("No @CrossFieldConstraint found on {}", annotationType.getName());
+
             return null;
         }
 
         try
         {
-            return crossFieldConstraint.validatedBy().getDeclaredConstructor().newInstance();
+            Class<? extends CrossFieldConstraintValidator> validatorClass = crossFieldConstraint.validatedBy();
+
+            logger.debug("Validator class to instantiate: {}", validatorClass.getName());
+
+            CrossFieldConstraintValidator validator = validatorClass.getDeclaredConstructor().newInstance();
+
+            logger.debug("Successfully created validator instance: {}", validator.getClass().getName());
+
+            return validator;
         }
         catch (Exception e)
         {
+            logger.debug("Failed to instantiate validator: {}", e.getMessage());
+
             throw new IllegalStateException("Failed to instantiate validator for " + annotationType, e);
         }
     }

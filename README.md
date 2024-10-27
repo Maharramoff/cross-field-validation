@@ -34,7 +34,7 @@ object context when writing field-level validators. There are long-standing open
 <dependency>
     <groupId>io.github.maharramoff</groupId>
     <artifactId>cross-field-validation</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 </dependency>
 ```
 
