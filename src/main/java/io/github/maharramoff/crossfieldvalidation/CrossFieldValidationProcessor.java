@@ -102,7 +102,8 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
 
         for (Field field : fields)
         {
-            for (Annotation annotation : field.getAnnotations())
+            Annotation[] annotations = field.getAnnotations();
+            for (Annotation annotation : annotations)
             {
                 logger.debug("Processing annotation: {}", annotation.annotationType().getName());
 
