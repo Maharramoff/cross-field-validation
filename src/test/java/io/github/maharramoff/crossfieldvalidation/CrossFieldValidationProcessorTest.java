@@ -1,15 +1,17 @@
 package io.github.maharramoff.crossfieldvalidation;
 
-import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.lang.annotation.*;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,145 +24,223 @@ class CrossFieldValidationProcessorTest
 
     private CrossFieldValidationProcessor validationProcessor;
     private ConstraintValidatorContext mockContext;
+    private Validator standardValidator;
+    private ValidatorFactory validatorFactory;
 
     @BeforeEach
     void setUp()
     {
         validationProcessor = new CrossFieldValidationProcessor();
-        mockContext = mock(ConstraintValidatorContext.class);
+        mockContext = createMockContext();
+        validatorFactory = Validation.buildDefaultValidatorFactory();
+        standardValidator = validatorFactory.getValidator();
+    }
 
-        ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder = mock(
-                ConstraintValidatorContext.ConstraintViolationBuilder.class);
-        ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext nodeBuilder = mock(
-                ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
+    private ConstraintValidatorContext createMockContext()
+    {
+        ConstraintValidatorContext                                                           context          = mock(ConstraintValidatorContext.class);
+        ConstraintValidatorContext.ConstraintViolationBuilder                                violationBuilder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+        ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext nodeBuilder      = mock(ConstraintValidatorContext.ConstraintViolationBuilder.NodeBuilderCustomizableContext.class);
 
-        when(mockContext.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
+        when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
         when(violationBuilder.addPropertyNode(anyString())).thenReturn(nodeBuilder);
-        when(nodeBuilder.addConstraintViolation()).thenReturn(mockContext);
+        when(nodeBuilder.addConstraintViolation()).thenReturn(context);
+
+        return context;
     }
 
-    @Test
-    void shouldReturnTrueWhenPasswordAndConfirmPasswordMatch()
+    @Nested
+    @DisplayName("Validation Success Cases")
+    class ValidationSuccessTests
     {
-        TestObject testObject = new TestObject("password123", "password123");
-        boolean    result     = validationProcessor.isValid(testObject, mockContext);
-        assertTrue(result);
+
+        @Test
+        void shouldReturnTrueWhenConstraintsSatisfied()
+        {
+            TestObject testObject = new TestObject("password123", "password123");
+            boolean    result     = validationProcessor.isValid(testObject, mockContext);
+            assertTrue(result);
+            verifyNoInteractions(mockContext);
+        }
+
+        @Test
+        void shouldHandleEmptyObjectGracefully()
+        {
+            EmptyTestObject emptyTestObject = new EmptyTestObject();
+            boolean         result          = validationProcessor.isValid(emptyTestObject, mockContext);
+            assertTrue(result);
+            verifyNoInteractions(mockContext);
+        }
+
+        @Test
+        void shouldIgnoreNonAnnotatedFields()
+        {
+            TestObjectWithoutAnnotations testObject = new TestObjectWithoutAnnotations("value1", "value2");
+            boolean                      result     = validationProcessor.isValid(testObject, mockContext);
+            assertTrue(result);
+            verifyNoInteractions(mockContext);
+        }
     }
 
-    @Test
-    void shouldReturnFalseWhenPasswordAndConfirmPasswordDoNotMatch()
+    @Nested
+    @DisplayName("Validator Caching and Instantiation")
+    class ValidatorCachingTests
     {
-        TestObject testObject = new TestObject("password123", "password456");
-        boolean    result     = validationProcessor.isValid(testObject, mockContext);
-        assertFalse(result);
+
+        @Test
+        void shouldCacheValidatorInstances()
+        {
+            TestObject testObject = new TestObject("password123", "password123");
+            validationProcessor.isValid(testObject, mockContext);
+            validationProcessor.isValid(testObject, mockContext); // Second call to trigger caching
+
+            CrossFieldConstraintValidator cachedValidator = validationProcessor.getValidatorForAnnotation(MatchWith.class);
+            assertNotNull(cachedValidator);
+        }
+
+        @Test
+        void shouldReturnNullForNonCrossFieldConstraint()
+        {
+            CrossFieldConstraintValidator validator = validationProcessor.getValidatorForAnnotation(NonCrossFieldConstraint.class);
+            assertNull(validator);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenValidatorInstantiationFails()
+        {
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                    validationProcessor.getValidatorForAnnotation(InvalidValidatorAnnotation.class));
+
+            assertTrue(exception.getMessage().contains("Failed to instantiate validator for"));
+        }
     }
 
-    @Test
-    void shouldCacheValidatorInstancesForAnnotations()
+    @Nested
+    @DisplayName("Error Handling and Exceptions")
+    class ErrorHandlingTests
     {
-        TestObject testObject = new TestObject("password123", "password123");
 
-        validationProcessor.isValid(testObject, mockContext);
+        @Test
+        void shouldReturnFalseWhenValidatorThrowsException() throws Exception
+        {
+            TestObject testObject = new TestObject("password123", "password123");
 
-        validationProcessor.isValid(testObject, mockContext);
+            CrossFieldConstraintValidator mockValidator = mock(CrossFieldConstraintValidator.class);
+            when(mockValidator.isValid(any(), any(), any())).thenThrow(new RuntimeException("Validation Error"));
 
-        CrossFieldConstraintValidator cachedValidator = validationProcessor.getValidatorForAnnotation(MatchWith.class);
-        assertNotNull(cachedValidator);
+            validationProcessor.getValidatorCache().put(MatchWith.class, mockValidator);
+
+            boolean result = validationProcessor.isValid(testObject, mockContext);
+            assertFalse(result);
+        }
     }
 
-    @Test
-    void shouldIgnoreFieldsWithoutCrossFieldConstraintAnnotations()
+    @Nested
+    @DisplayName("Edge Cases and Special Conditions")
+    class EdgeCaseTests
     {
-        TestObjectWithoutAnnotations testObject = new TestObjectWithoutAnnotations("password123", "password123");
 
-        boolean result = validationProcessor.isValid(testObject, mockContext);
+        @Test
+        @DisplayName("Should fail validation when one field is null and the other is not")
+        void shouldFailWhenOneFieldIsNull()
+        {
+            TestObject testObject = new TestObject(null, "value");
+            boolean    result     = validationProcessor.isValid(testObject, mockContext);
+            assertFalse(result);
+            verify(mockContext).disableDefaultConstraintViolation();
+            verify(mockContext).buildConstraintViolationWithTemplate("Fields do not match.");
+        }
 
-        assertTrue(result);
+        @Test
+        @DisplayName("Should handle objects with inherited fields")
+        void shouldHandleInheritedFields()
+        {
+            SubTestObject testObject = new SubTestObject("password123", "password123", "extraField");
+            boolean       result     = validationProcessor.isValid(testObject, mockContext);
+            assertTrue(result);
+            verifyNoInteractions(mockContext);
+        }
+
+        @Test
+        @DisplayName("Should validate objects with multiple cross-field constraints")
+        void shouldValidateMultipleCrossFieldConstraints()
+        {
+            MultiConstraintTestObject2 testObject = new MultiConstraintTestObject2("value", "value", 5, 5);
+            boolean                    result     = validationProcessor.isValid(testObject, mockContext);
+            assertTrue(result);
+            verifyNoInteractions(mockContext);
+        }
     }
 
-    @Test
-    void shouldReturnFalseWhenValidatorThrowsException() throws Exception
+    @Nested
+    @DisplayName("Multiple CrossFieldConstraints Tests")
+    class MultipleConstraintsTests
     {
-        TestObject testObject = new TestObject("password123", "password123");
 
-        CrossFieldConstraintValidator mockValidator = mock(CrossFieldConstraintValidator.class);
-        when(mockValidator.isValid(any(), any(), any())).thenThrow(new RuntimeException("Validation Error"));
-
-        Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = getInternalCache();
-        validatorCache.put(MatchWith.class, mockValidator);
-
-        boolean result = validationProcessor.isValid(testObject, mockContext);
-
-        assertFalse(result);
+        @Test
+        void shouldCollectAllViolationsWhenMultipleConstraintsViolated()
+        {
+            MultiConstraintTestObject testObject = new MultiConstraintTestObject(
+                    10, 100, 5, "secret123", "different");
+            boolean result = validationProcessor.isValid(testObject, mockContext);
+            assertFalse(result);
+            verify(mockContext).disableDefaultConstraintViolation();
+            verify(mockContext, times(2)).buildConstraintViolationWithTemplate(anyString());
+        }
     }
 
-    @Test
-    void shouldAddViolationsToConstraintValidatorContext()
+    @Nested
+    @DisplayName("Combined Constraints Tests")
+    class CombinedConstraintsTests
     {
-        TestObject testObject = new TestObject("password123", "password456");
 
-        boolean result = validationProcessor.isValid(testObject, mockContext);
+        private ValidatorFactory validatorFactory;
+        private Validator standardValidator;
 
-        assertFalse(result);
-        verify(mockContext).disableDefaultConstraintViolation();
-        verify(mockContext).buildConstraintViolationWithTemplate("Fields do not match.");
-    }
+        @BeforeEach
+        void setUpValidators()
+        {
+            validatorFactory = Validation.buildDefaultValidatorFactory();
+            standardValidator = validatorFactory.getValidator();
+        }
 
-    @Test
-    void shouldReturnTrueWhenNoViolationsOccur()
-    {
-        TestObject testObject = new TestObject("password123", "password123");
+        @AfterEach
+        void tearDownValidators()
+        {
+            validatorFactory.close();
+        }
+        
+        @Test
+        void shouldFailWhenStandardConstraintsViolated()
+        {
+            CombinedConstraintsTestObject testObject = new CombinedConstraintsTestObject(
+                    "usr", "pass", "pass", "invalid-email");
+            Set<ConstraintViolation<CombinedConstraintsTestObject>> violations = standardValidator.validate(testObject);
+            assertFalse(violations.isEmpty());
+        }
 
-        boolean result = validationProcessor.isValid(testObject, mockContext);
+        @Test
+        void shouldCollectViolationsFromBothStandardAndCrossFieldConstraints()
+        {
+            CombinedConstraintsTestObject testObject = new CombinedConstraintsTestObject(
+                    "usr", "pass", "different", "invalid-email");
+            Set<ConstraintViolation<CombinedConstraintsTestObject>> violations = standardValidator.validate(testObject);
+            assertFalse(violations.isEmpty());
 
-        assertTrue(result);
-        verify(mockContext, never()).buildConstraintViolationWithTemplate(anyString());
-    }
+            boolean crossFieldResult = validationProcessor.isValid(testObject, mockContext);
+            assertFalse(crossFieldResult);
+            verify(mockContext).disableDefaultConstraintViolation();
+            verify(mockContext).buildConstraintViolationWithTemplate("Fields do not match.");
 
-
-    @Test
-    void shouldReturnTrueWhenClassHasNoFields()
-    {
-        EmptyTestObject emptyTestObject = new EmptyTestObject();
-
-        boolean result = validationProcessor.isValid(emptyTestObject, mockContext);
-
-        assertTrue(result);
-        verify(mockContext, never()).buildConstraintViolationWithTemplate(anyString());
-    }
-
-    @Test
-    void shouldHandleNullValuesInFields()
-    {
-        TestObject testObject = new TestObject(null, "password123");
-        boolean    result     = validationProcessor.isValid(testObject, mockContext);
-        assertFalse(result);
-        verify(mockContext).buildConstraintViolationWithTemplate(anyString());
-    }
-
-    @Test
-    void shouldHandleEmptyStringsInFields()
-    {
-        TestObject testObject = new TestObject("", "");
-        boolean    result     = validationProcessor.isValid(testObject, mockContext);
-        assertTrue(result);
+            assertFalse(violations.isEmpty());
+        }
     }
 
 
-    @Test
-    void shouldReturnNullWhenAnnotationIsNotCrossFieldConstraint()
+    // Test helper methods and classes
+    private Map<Class<? extends Annotation>, CrossFieldConstraintValidator> getValidatorCache()
     {
-        CrossFieldConstraintValidator validator = validationProcessor.getValidatorForAnnotation(NonCrossFieldConstraint.class);
-        assertNull(validator);
-    }
-
-    @Test
-    void shouldThrowIllegalStateExceptionWhenValidatorInstantiationFails()
-    {
-        Exception exception = assertThrows(IllegalStateException.class, () ->
-                validationProcessor.getValidatorForAnnotation(InvalidValidatorAnnotation.class));
-
-        assertTrue(exception.getMessage().contains("Failed to instantiate validator for"));
+        return validationProcessor.getValidatorCache();
     }
 
     @Retention(RetentionPolicy.RUNTIME) @interface NonCrossFieldConstraint
@@ -185,49 +265,8 @@ class CrossFieldValidationProcessorTest
         }
     }
 
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @CrossFieldConstraint(validatedBy = MinLengthValidator.class) @interface MinLength
-    {
-        int value();
-
-        String message() default "Field must be at least {value} characters long";
-    }
-
-    static class MinLengthValidator extends BaseCrossFieldValidator
-    {
-        @Override
-        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping,
-                               List<CrossFieldConstraintViolation> violations)
-        {
-            AtomicBoolean isValid = new AtomicBoolean(true);
-
-            processFields(obj, fieldMapping, MinLength.class, (field, annotation) ->
-            {
-                String value = (String) getProperty(obj, field.getName());
-                if (value == null || value.length() < annotation.value())
-                {
-                    violations.add(new CrossFieldConstraintViolation(
-                            field.getName(),
-                            annotation.message().replace("{value}", String.valueOf(annotation.value()))));
-                    isValid.set(false);
-                }
-            });
-
-            return isValid.get();
-        }
-    }
-
     static class EmptyTestObject
     {
-    }
-
-    private Map<Class<? extends Annotation>, CrossFieldConstraintValidator> getInternalCache() throws Exception
-    {
-        Field cacheField = CrossFieldValidationProcessor.class.getDeclaredField("validatorCache");
-        cacheField.setAccessible(true);
-        return (Map<Class<? extends Annotation>, CrossFieldConstraintValidator>) cacheField.get(validationProcessor);
     }
 
     static class TestObjectWithoutAnnotations
@@ -254,15 +293,14 @@ class CrossFieldValidationProcessorTest
     static class MatchWithValidator extends BaseCrossFieldValidator
     {
         @Override
-        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping,
-                               List<CrossFieldConstraintViolation> violations)
+        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<CrossFieldConstraintViolation> violations)
         {
             processFields(obj, fieldMapping, MatchWith.class, (field, annotation) ->
             {
                 Object fieldValue      = getProperty(obj, field.getName());
                 Object otherFieldValue = getProperty(obj, annotation.field());
 
-                if (!fieldValue.equals(otherFieldValue))
+                if (fieldValue == null || !fieldValue.equals(otherFieldValue))
                 {
                     violations.add(new CrossFieldConstraintViolation(field.getName(), annotation.message()));
                 }
@@ -285,5 +323,164 @@ class CrossFieldValidationProcessorTest
             this.value = value;
             this.other = other;
         }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class MultiConstraintTestObject
+    {
+        private final Integer minValue;
+        private final Integer maxValue;
+
+        @GreaterThan(field = "minValue")
+        private final Integer currentValue;
+
+        @MatchWith(field = "password")
+        private final String confirmPassword;
+
+        private final String password;
+
+        MultiConstraintTestObject(Integer minValue, Integer maxValue, Integer currentValue, String password, String confirmPassword)
+        {
+            this.minValue = minValue;
+            this.maxValue = maxValue;
+            this.currentValue = currentValue;
+            this.password = password;
+            this.confirmPassword = confirmPassword;
+        }
+    }
+
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @CrossFieldConstraint(validatedBy = GreaterThanValidator.class) @interface GreaterThan
+    {
+        String field();
+
+        String message() default "Field must be greater than {field}.";
+    }
+
+    static class GreaterThanValidator extends BaseCrossFieldValidator
+    {
+        @Override
+        public boolean isValid(Object obj, Map<Class<?>, List<Field>> fieldMapping, List<CrossFieldConstraintViolation> violations)
+        {
+            processFields(obj, fieldMapping, GreaterThan.class, (field, annotation) ->
+            {
+                Comparable<Object> fieldValue      = (Comparable<Object>) getProperty(obj, field.getName());
+                Object             otherFieldValue = getProperty(obj, annotation.field());
+                if (fieldValue == null || otherFieldValue == null || fieldValue.compareTo(otherFieldValue) <= 0)
+                {
+                    String message = annotation.message().replace("{field}", annotation.field());
+                    violations.add(new CrossFieldConstraintViolation(field.getName(), message));
+                }
+            });
+            return violations.isEmpty();
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class CombinedConstraintsTestObject
+    {
+        @NotNull
+        @Size(min = 5)
+        private final String username;
+
+        @NotNull
+        @Size(min = 8)
+        private final String password;
+
+        @MatchWith(field = "password")
+        private final String confirmPassword;
+
+        @NotNull
+        @Email
+        private final String email;
+
+        CombinedConstraintsTestObject(String username, String password, String confirmPassword, String email)
+        {
+            this.username = username;
+            this.password = password;
+            this.confirmPassword = confirmPassword;
+            this.email = email;
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class SubTestObject extends TestObject
+    {
+        private final String extraField;
+
+        SubTestObject(String value, String other, String extraField)
+        {
+            super(value, other);
+            this.extraField = extraField;
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class MultiConstraintTestObject2
+    {
+        @MatchWith(field = "field2")
+        private final String field1;
+
+        private final String field2;
+
+        @MatchWith(field = "number2")
+        private final Integer number1;
+
+        private final Integer number2;
+
+        MultiConstraintTestObject2(String field1, String field2, Integer number1, Integer number2)
+        {
+            this.field1 = field1;
+            this.field2 = field2;
+            this.number1 = number1;
+            this.number2 = number2;
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class NumericTestObject
+    {
+        @MatchWith(field = "number2")
+        private final Integer number1;
+
+        private final Integer number2;
+
+        NumericTestObject(Integer number1, Integer number2)
+        {
+            this.number1 = number1;
+            this.number2 = number2;
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class CollectionTestObject
+    {
+        @MatchWith(field = "list2")
+        private final List<String> list1;
+
+        private final List<String> list2;
+
+        CollectionTestObject(List<String> list1, List<String> list2)
+        {
+            this.list1 = list1;
+            this.list2 = list2;
+        }
+    }
+
+    @Getter
+    @EnableCrossFieldConstraints
+    static class DefaultValuesTestObject
+    {
+        @MatchWith(field = "defaultField")
+        private final String defaultField = "defaultValue";
+
+        private final String anotherField = "defaultValue";
     }
 }
