@@ -50,7 +50,7 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
     private static final Logger logger = LoggerFactory.getLogger(CrossFieldValidationProcessor.class);
     private final Map<Class<?>, List<Field>> fieldMapping = new ConcurrentHashMap<>();
     private final Map<Class<?>, Map<Field, Annotation[]>> fieldAnnotationsCache = new ConcurrentHashMap<>();
-    private final Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = new HashMap<>();
+    private final Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = new ConcurrentHashMap<>();
 
     /**
      * Default constructor for the `CrossFieldValidationProcessor`.
@@ -120,10 +120,7 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
             {
                 logger.debug("Processing annotation: {}", annotation.annotationType().getName());
 
-                CrossFieldConstraintValidator validator = validatorCache.computeIfAbsent(
-                        annotation.annotationType(),
-                        this::getValidatorForAnnotation
-                );
+                CrossFieldConstraintValidator validator = getValidatorForAnnotation(annotation.annotationType());
 
                 logger.debug("Validator obtained: {}", (validator != null ? validator.getClass().getName() : "null"));
 
