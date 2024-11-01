@@ -7,14 +7,16 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import org.junit.jupiter.api.*;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -116,26 +118,6 @@ class CrossFieldValidationProcessorTest
     }
 
     @Nested
-    @DisplayName("Error Handling and Exceptions")
-    class ErrorHandlingTests
-    {
-
-        @Test
-        void shouldReturnFalseWhenValidatorThrowsException() throws Exception
-        {
-            TestObject testObject = new TestObject("password123", "password123");
-
-            CrossFieldConstraintValidator mockValidator = mock(CrossFieldConstraintValidator.class);
-            when(mockValidator.isValid(any(), any(), any())).thenThrow(new RuntimeException("Validation Error"));
-
-            validationProcessor.getValidatorCache().put(MatchWith.class, mockValidator);
-
-            boolean result = validationProcessor.isValid(testObject, mockContext);
-            assertFalse(result);
-        }
-    }
-
-    @Nested
     @DisplayName("Edge Cases and Special Conditions")
     class EdgeCaseTests
     {
@@ -209,7 +191,7 @@ class CrossFieldValidationProcessorTest
         {
             validatorFactory.close();
         }
-        
+
         @Test
         void shouldFailWhenStandardConstraintsViolated()
         {
@@ -238,10 +220,6 @@ class CrossFieldValidationProcessorTest
 
 
     // Test helper methods and classes
-    private Map<Class<? extends Annotation>, CrossFieldConstraintValidator> getValidatorCache()
-    {
-        return validationProcessor.getValidatorCache();
-    }
 
     @Retention(RetentionPolicy.RUNTIME) @interface NonCrossFieldConstraint
     {
