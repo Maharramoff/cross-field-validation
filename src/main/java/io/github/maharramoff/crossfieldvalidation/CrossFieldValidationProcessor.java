@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A {@code ConstraintValidator} implementation that enables cross-field validation for objects.
@@ -47,7 +48,8 @@ import java.util.*;
 public class CrossFieldValidationProcessor implements ConstraintValidator<EnableCrossFieldConstraints, Object>
 {
     private static final Logger logger = LoggerFactory.getLogger(CrossFieldValidationProcessor.class);
-    private final Map<Class<?>, List<Field>> fieldMapping = new HashMap<>();
+    private final Map<Class<?>, List<Field>> fieldMapping = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<Field, Annotation[]>> fieldAnnotationsCache = new ConcurrentHashMap<>();
     private final Map<Class<? extends Annotation>, CrossFieldConstraintValidator> validatorCache = new HashMap<>();
 
     /**
@@ -100,14 +102,28 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
 
         logger.debug("Processing {} fields for class: {}", fields.size(), clazz.getName());
 
+        // Cache annotations per field
+        Map<Field, Annotation[]> fieldAnnotations = fieldAnnotationsCache.computeIfAbsent(clazz, c ->
+        {
+            Map<Field, Annotation[]> map = new HashMap<>();
+            for (Field field : fields)
+            {
+                map.put(field, field.getAnnotations());
+            }
+            return map;
+        });
+
         for (Field field : fields)
         {
-            Annotation[] annotations = field.getAnnotations();
+            Annotation[] annotations = fieldAnnotations.get(field);
             for (Annotation annotation : annotations)
             {
                 logger.debug("Processing annotation: {}", annotation.annotationType().getName());
 
-                CrossFieldConstraintValidator validator = getValidatorForAnnotation(annotation.annotationType());
+                CrossFieldConstraintValidator validator = validatorCache.computeIfAbsent(
+                        annotation.annotationType(),
+                        this::getValidatorForAnnotation
+                );
 
                 logger.debug("Validator obtained: {}", (validator != null ? validator.getClass().getName() : "null"));
 
@@ -202,6 +218,11 @@ public class CrossFieldValidationProcessor implements ConstraintValidator<Enable
 
             throw new IllegalStateException("Failed to instantiate validator for " + annotationType, e);
         }
+    }
+
+    Map<Class<? extends Annotation>, CrossFieldConstraintValidator> getValidatorCache()
+    {
+        return validatorCache;
     }
 
 }
