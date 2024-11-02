@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 (2024-11-02)
+
+### Changes
+
+* Improved validation performance and test coverage.
+
 ## 1.2.1 (2024-10-27)
 
 ### Bug Fixes
